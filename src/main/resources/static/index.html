@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Car Detailing Scheduler</title>
+
+    ```
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+    <style>
+        #calendar {
+            max-width: 900px;
+            margin-top: 20px;
+        }
+    </style>
+    ```
+
+</head>
+<body>
+
+<h1>🚗 Scheduler Test</h1>
+
+<h2>Create Appointment</h2>
+
+<input id="customerId" placeholder="Customer ID"><br>
+
+<select id="employeeId"></select><br>
+
+<input id="serviceId" placeholder="Service ID"><br> <input type="datetime-local" id="startTime"><br>
+
+<button onclick="createAppointment()">Create</button>
+
+<hr>
+
+<h2>Appointments</h2>
+<button onclick="loadAppointments()">Refresh</button>
+
+<ul id="appointmentsList"></ul>
+
+<hr>
+
+<h2>📅 Calendar</h2>
+<div id="calendar"></div>
+
+<select id="employeeFilter"></select>
+
+<script>
+
+    let calendar;
+
+    // 🚀 CREATE APPOINTMENT
+    function createAppointment() {
+        const customerId = document.getElementById('customerId').value;
+        const employeeId = document.getElementById('employeeId').value;
+        const serviceId = document.getElementById('serviceId').value;
+        const startTime = document.getElementById('startTime').value;
+
+
+
+        fetch('/api/appointments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customerId,
+                employeeId,
+                serviceId,
+                startTime
+            })
+        })
+            .then(async res => {
+                if (!res.ok) {
+                    const text = await res.text(); // 🔥 read backend message
+                    throw new Error(text);
+                }
+                return res.json();
+            })
+            .then(() => {
+                alert("Appointment created!");
+                loadAppointments();
+                loadEmployees();
+                calendar.refetchEvents();
+            })
+            .catch(err => {
+                console.error(err);
+                alert(err.message); // 🔥 show REAL error
+            });
+    }
+
+    // 👥 LOAD EMPLOYEES (for both dropdowns)
+    function loadEmployees() {
+        fetch('/api/appointments/employees', { cache: "no-store" })
+            .then(res => {
+                if (!res.ok) throw new Error("Failed to load employees");
+                return res.json();
+            })
+            .then(data => {
+                const createSelect = document.getElementById('employeeId');
+                const filterSelect = document.getElementById('employeeFilter');
+
+                createSelect.innerHTML = '<option value="">Select Employee</option>';
+                filterSelect.innerHTML = '<option value="">All Employees</option>';
+
+                data.forEach(e => {
+                    const option1 = document.createElement('option');
+                    option1.value = e.id;
+                    option1.textContent = e.name;
+
+                    const option2 = option1.cloneNode(true);
+
+                    createSelect.appendChild(option1);
+                    filterSelect.appendChild(option2);
+                });
+            })
+            .catch(err => console.error(err));
+    }
+
+    // 📋 LOAD LIST
+    function loadAppointments() {
+        fetch('/api/appointments', { cache: "no-store" })
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('appointmentsList');
+                list.innerHTML = '';
+
+                data.forEach(a => {
+                    const li = document.createElement('li');
+
+                    li.innerHTML = `
+                    <b>${a.customerName}</b> |
+                    ${a.serviceName} |
+                    ${a.startTime} → ${a.endTime} |
+                    <b>${a.status}</b>
+                    <br>
+                    <button onclick="accept(${a.id})">Accept</button>
+                    <button onclick="decline(${a.id})">Decline</button>
+                    <hr>
+                `;
+
+                    list.appendChild(li);
+                });
+            });
+    }
+
+    // ✅ ACCEPT
+    function accept(id) {
+        fetch(`/api/appointments/${id}/accept`, { method: 'POST' })
+            .then(() => {
+                loadAppointments();
+                calendar.refetchEvents();
+            });
+    }
+
+    // ❌ DECLINE
+    function decline(id) {
+        fetch(`/api/appointments/${id}/decline`, { method: 'POST' })
+            .then(() => {
+                loadAppointments();
+                calendar.refetchEvents();
+            });
+    }
+
+    // 📅 INIT
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const calendarEl = document.getElementById('calendar');
+
+        loadEmployees();
+
+        document.getElementById('employeeFilter').addEventListener('change', () => {
+            calendar.refetchEvents();
+        });
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+
+            initialView: 'timeGridWeek',
+            height: 650,
+
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+
+            slotMinTime: "08:00:00",
+            slotMaxTime: "18:00:00",
+
+            dateClick: function(info) {
+
+                const employeeId = document.getElementById('employeeFilter').value;
+
+                if (!employeeId) {
+                    alert("Select an employee first!");
+                    return;
+                }
+
+                let url = `/api/appointments?employeeId=${employeeId}`;
+
+                fetch(url, { cache: "no-store" })
+                    .then(res => res.json())
+                    .then(data => {
+
+                        const clicked = new Date(info.dateStr);
+
+                        const conflict = data.some(a => {
+                            const start = new Date(a.startTime);
+                            const end = new Date(a.endTime);
+                            return clicked >= start && clicked < end;
+                        });
+
+                        if (conflict) {
+                            alert("❌ This time slot is already booked!");
+                            return;
+                        }
+
+                        document.getElementById('startTime').value = info.dateStr;
+                    });
+            },
+
+            editable: true,
+
+            eventDrop: function(info) {
+
+                const id = info.event.id;
+                const newStart = info.event.start;
+
+                fetch(`/api/appointments/${id}/reschedule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        startTime: newStart.toISOString()
+                    })
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            alert("❌ Cannot reschedule (conflict)");
+                            info.revert();
+                        } else {
+                            calendar.refetchEvents();
+                        }
+                    });
+            },
+
+            events: function(fetchInfo, successCallback, failureCallback) {
+
+                const employeeId = document.getElementById('employeeFilter').value;
+
+                let url = '/api/appointments';
+
+                if (employeeId) {
+                    url += `?employeeId=${employeeId}`;
+                }
+
+                console.log("Fetching URL:", url);
+
+                fetch(url, { cache: "no-store" })
+                    .then(res => res.json())
+                    .then(data => {
+
+                        const events = data.map(a => ({
+                            id: a.id,
+                            title: `${a.customerName} - ${a.serviceName}`,
+                            start: a.startTime,
+                            end: a.endTime,
+                            color:
+                                a.status === 'ACCEPTED' ? 'green' :
+                                    a.status === 'DECLINED' ? 'red' :
+                                        'orange'
+                        }));
+
+                        successCallback(events);
+                    })
+                    .catch(err => failureCallback(err));
+            }
+
+        });
+
+        calendar.render();
+    });
+
+</script>
+
+</body>
+</html>
