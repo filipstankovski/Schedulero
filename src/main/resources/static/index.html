@@ -48,7 +48,7 @@
 
     let calendar;
 
-    // 🚀 CREATE APPOINTMENT
+    
     function createAppointment() {
         const customerId = document.getElementById('customerId').value;
         const employeeId = document.getElementById('employeeId').value;
@@ -69,7 +69,7 @@
         })
             .then(async res => {
                 if (!res.ok) {
-                    const text = await res.text(); // 🔥 read backend message
+                    const text = await res.text();
                     throw new Error(text);
                 }
                 return res.json();
@@ -82,11 +82,11 @@
             })
             .catch(err => {
                 console.error(err);
-                alert(err.message); // 🔥 show REAL error
+                alert(err.message); 
             });
     }
 
-    // 👥 LOAD EMPLOYEES (for both dropdowns)
+    
     function loadEmployees() {
         fetch('/api/appointments/employees', { cache: "no-store" })
             .then(res => {
@@ -114,7 +114,7 @@
             .catch(err => console.error(err));
     }
 
-    // 📋 LOAD LIST
+    
     function loadAppointments() {
         fetch('/api/appointments', { cache: "no-store" })
             .then(res => res.json())
@@ -141,7 +141,7 @@
             });
     }
 
-    // ✅ ACCEPT
+    
     function accept(id) {
         fetch(`/api/appointments/${id}/accept`, { method: 'POST' })
             .then(() => {
@@ -150,7 +150,7 @@
             });
     }
 
-    // ❌ DECLINE
+    
     function decline(id) {
         fetch(`/api/appointments/${id}/decline`, { method: 'POST' })
             .then(() => {
@@ -159,7 +159,7 @@
             });
     }
 
-    // 📅 INIT
+  
     document.addEventListener('DOMContentLoaded', function () {
 
         const calendarEl = document.getElementById('calendar');
