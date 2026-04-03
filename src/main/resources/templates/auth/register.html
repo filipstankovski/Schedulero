@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><title>Register — Schedulero</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0;padding:0;box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:#f0f7ff; padding:2rem 1rem; }
+        .card { background:#fff; border-radius:16px; padding:2.5rem 2rem;
+            width:100%; max-width:480px; margin:0 auto;
+            box-shadow:0 8px 40px rgba(0,0,0,0.08); }
+        .logo { text-align:center; font-size:1.8rem; font-weight:700; margin-bottom:1.5rem; }
+        .logo span { color:#3b82f6; }
+        .tabs { display:flex; background:#f3f4f6; border-radius:10px; padding:4px; margin-bottom:1.8rem; }
+        .tab { flex:1; text-align:center; padding:.6rem; border-radius:8px; cursor:pointer;
+            font-weight:500; font-size:.9rem; color:#555; transition:all .2s; }
+        .tab.active { background:#fff; color:#1a1a2e; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+        label { display:block; font-weight:500; font-size:.9rem; margin-bottom:.4rem; color:#333; }
+        input { width:100%; padding:.75rem 1rem; border:1.5px solid #e5e7eb;
+            border-radius:9px; font-size:1rem; margin-bottom:1rem;
+            transition:border-color .2s; font-family:inherit; }
+        input:focus { outline:none; border-color:#3b82f6; }
+        .btn { width:100%; background:#3b82f6; color:#fff; border:none; padding:.85rem;
+            border-radius:9px; font-size:1rem; font-weight:600; cursor:pointer;
+            transition:background .2s; font-family:inherit; }
+        .btn:hover { background:#2563eb; }
+        .error-msg { background:#fef2f2; color:#dc2626; border:1px solid #fecaca;
+            border-radius:8px; padding:.75rem 1rem; margin-bottom:1.2rem; font-size:.9rem; }
+        .footer-link { text-align:center; margin-top:1.5rem; font-size:.9rem; color:#555; }
+        .footer-link a { color:#3b82f6; text-decoration:none; font-weight:500; }
+        .form-section { display:none; }
+        .form-section.active { display:block; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">Sched<span>ulero</span></div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('user')">I'm a Customer</div>
+        <div class="tab" onclick="switchTab('business')">I'm a Business</div>
+    </div>
+
+    <div th:if="${error}" class="error-msg" th:text="${error}"></div>
+
+
+    <div id="tab-user" class="form-section active">
+        <form th:action="@{/register/user}" method="post">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="johndoe" required>
+            <label>Email</label>
+            <input type="email" name="email" placeholder="john@example.com" required>
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Min. 8 characters" required>
+            <button type="submit" class="btn">Create customer account</button>
+        </form>
+    </div>
+
+
+    <div id="tab-business" class="form-section">
+        <form th:action="@{/register/business}" method="post">
+            <label>Business Name</label>
+            <input type="text" name="businessName" placeholder="Shine & Detail MK" required>
+            <label>Username</label>
+            <input type="text" name="username" placeholder="shinedetail" required>
+            <label>Email</label>
+            <input type="email" name="email" placeholder="contact@shinedetal.com" required>
+            <label>Phone</label>
+            <input type="tel" name="phoneNumber" placeholder="+389 70 000 000">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Min. 8 characters" required>
+            <button type="submit" class="btn">Register my business</button>
+        </form>
+    </div>
+
+    <div class="footer-link">
+        Already have an account? <a th:href="@{/login}">Log in</a>
+    </div>
+</div>
+
+<script>
+    function switchTab(type) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('tab-' + type).classList.add('active');
+    }
+</script>
+</body>
+</html>

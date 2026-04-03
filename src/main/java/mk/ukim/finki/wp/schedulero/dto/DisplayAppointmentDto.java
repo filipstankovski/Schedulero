@@ -8,12 +8,9 @@ public class DisplayAppointmentDto {
 
     public Long id;
     public String customerName;
-    public String employeeName;
     public String serviceName;
-
     public LocalDateTime startTime;
     public LocalDateTime endTime;
-
     public String status;
 
     public static DisplayAppointmentDto from(Appointment a) {
@@ -21,7 +18,6 @@ public class DisplayAppointmentDto {
 
         dto.id = a.getId();
         dto.customerName = a.getCustomer().getName();
-        dto.employeeName = a.getEmployee().getName();
         dto.serviceName = a.getService().getName();
         dto.startTime = a.getStartTime();
         dto.endTime = a.getEndTime();

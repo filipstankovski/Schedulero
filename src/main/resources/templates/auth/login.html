@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><title>Login — Schedulero</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0;padding:0;box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:#f0f7ff;
+            min-height:100vh; display:flex; align-items:center; justify-content:center; }
+        .card { background:#fff; border-radius:16px; padding:2.5rem 2rem;
+            width:100%; max-width:420px; box-shadow:0 8px 40px rgba(0,0,0,0.08); }
+        .logo { text-align:center; font-size:1.8rem; font-weight:700; margin-bottom:1.5rem; }
+        .logo span { color:#3b82f6; }
+        h2 { font-size:1.4rem; margin-bottom:.3rem; }
+        .sub { color:#888; font-size:.9rem; margin-bottom:1.8rem; }
+        label { display:block; font-weight:500; font-size:.9rem; margin-bottom:.4rem; color:#333; }
+        input { width:100%; padding:.75rem 1rem; border:1.5px solid #e5e7eb;
+            border-radius:9px; font-size:1rem; margin-bottom:1.1rem;
+            transition:border-color .2s; font-family:inherit; }
+        input:focus { outline:none; border-color:#3b82f6; }
+        .btn { width:100%; background:#3b82f6; color:#fff; border:none; padding:.85rem;
+            border-radius:9px; font-size:1rem; font-weight:600; cursor:pointer;
+            transition:background .2s; font-family:inherit; }
+        .btn:hover { background:#2563eb; }
+        .error-msg { background:#fef2f2; color:#dc2626; border:1px solid #fecaca;
+            border-radius:8px; padding:.75rem 1rem; margin-bottom:1.2rem; font-size:.9rem; }
+        .success-msg { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;
+            border-radius:8px; padding:.75rem 1rem; margin-bottom:1.2rem; font-size:.9rem; }
+        .footer-link { text-align:center; margin-top:1.5rem; font-size:.9rem; color:#555; }
+        .footer-link a { color:#3b82f6; text-decoration:none; font-weight:500; }
+        .back { display:block; text-align:center; margin-bottom:1rem; font-size:.9rem; color:#888; text-decoration:none; }
+        .back:hover { color:#3b82f6; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">Sched<span>ulero</span></div>
+    <h2>Welcome back</h2>
+    <p class="sub">Log in to manage your appointments</p>
+
+    <div th:if="${error}" class="error-msg" th:text="${error}"></div>
+    <div th:if="${param.registered}" class="success-msg">Account created! You can now log in.</div>
+
+    <form th:action="@{/login}" method="post">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="your username" required autofocus>
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••" required>
+        <button type="submit" class="btn">Log in</button>
+    </form>
+
+    <div class="footer-link">
+        Don't have an account? <a th:href="@{/register}">Sign up</a>
+    </div>
+    <a th:href="@{/}" class="back">← Back to home</a>
+</div>
+</body>
+</html>

@@ -7,7 +7,6 @@ import mk.ukim.finki.wp.schedulero.exceptions.InvalidAppointmentException;
 import mk.ukim.finki.wp.schedulero.model.Appointment;
 import mk.ukim.finki.wp.schedulero.model.Customer;
 import mk.ukim.finki.wp.schedulero.model.DetailService;
-import mk.ukim.finki.wp.schedulero.model.Employee;
 import mk.ukim.finki.wp.schedulero.repository.AppointmentRepository;
 import mk.ukim.finki.wp.schedulero.service.AppointmentService;
 import org.springframework.stereotype.Service;
@@ -19,6 +18,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class AppointmentServiceImpl implements AppointmentService {
+
     private final AppointmentRepository appointmentRepository;
 
     @Override
@@ -28,24 +28,21 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public Appointment findById(Long id) {
-        Optional<Appointment>optionalAppointment=appointmentRepository.findById(id);
-
-        if(optionalAppointment.isPresent()){
-            return optionalAppointment.get();
-        }else{
+        Optional<Appointment> optional = appointmentRepository.findById(id);
+        if (optional.isPresent()) {
+            return optional.get();
+        } else {
             throw new InvalidAppointmentException("The Appointment doesn't exist!");
         }
     }
 
+    @Override
     public Appointment create(CreateAppointmentDto dto,
                               Customer customer,
-                              Employee employee,
                               DetailService service) {
 
         Appointment appointment = new Appointment();
-
         appointment.setCustomer(customer);
-        appointment.setEmployee(employee);
         appointment.setService(service);
         appointment.setStartTime(dto.startTime);
 
@@ -53,8 +50,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setEndTime(endTime);
 
         boolean conflict = appointmentRepository
-                .existsByEmployeeIdAndStartTimeLessThanAndEndTimeGreaterThan(
-                        employee.getId(),
+                .existsByServiceIdAndStartTimeLessThanAndEndTimeGreaterThan(
+                        service.getId(),
                         endTime,
                         dto.startTime
                 );
@@ -64,7 +61,6 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         appointment.setStatus(AppointmentStatus.PENDING);
-
         return appointmentRepository.save(appointment);
     }
 
@@ -73,12 +69,14 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointmentRepository.save(appointment);
     }
 
+    @Override
     public Appointment accept(Long id) {
         Appointment a = findById(id);
         a.setStatus(AppointmentStatus.ACCEPTED);
         return appointmentRepository.save(a);
     }
 
+    @Override
     public Appointment decline(Long id) {
         Appointment a = findById(id);
         a.setStatus(AppointmentStatus.DECLINED);
@@ -87,41 +85,23 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public void deleteById(Long id) {
-        Appointment appointmentEntity=findById(id);
-        appointmentRepository.delete(appointmentEntity);
-
-    }
-
-    @Override
-    public List<Appointment> findByEmployeeId(Long employeeId) {
-        return appointmentRepository.findByEmployeeId(employeeId);
+        appointmentRepository.delete(findById(id));
     }
 
     @Override
     public List<Appointment> findByStartTimeBetween(LocalDateTime start, LocalDateTime end) {
-        return appointmentRepository.findByStartTimeBetween(start,end);
+        return appointmentRepository.findByStartTimeBetween(start, end);
     }
 
     @Override
-    public List<Appointment> findByEmployeeIdAndStartTimeBetween(Long employeeId, LocalDateTime start, LocalDateTime end) {
-        return appointmentRepository.findByEmployeeIdAndStartTimeBetween(
-                employeeId,
-                start,
-                end
-        );
-    }
-
     public Appointment reschedule(Long id, LocalDateTime newStart) {
-
         Appointment a = findById(id);
 
-        LocalDateTime newEnd = newStart.plusMinutes(
-                a.getService().getDurationMinutes()
-        );
+        LocalDateTime newEnd = newStart.plusMinutes(a.getService().getDurationMinutes());
 
         boolean conflict = appointmentRepository
-                .existsByEmployeeIdAndStartTimeLessThanAndEndTimeGreaterThan(
-                        a.getEmployee().getId(),
+                .existsByServiceIdAndStartTimeLessThanAndEndTimeGreaterThan(
+                        a.getService().getId(),
                         newEnd,
                         newStart
                 );
@@ -132,7 +112,11 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         a.setStartTime(newStart);
         a.setEndTime(newEnd);
-
         return appointmentRepository.save(a);
+    }
+
+    @Override
+    public List<Appointment> findByCustomerUsername(String username) {
+        return appointmentRepository.findByCustomer_Username(username);
     }
 }

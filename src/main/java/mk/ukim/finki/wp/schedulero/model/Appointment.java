@@ -3,7 +3,6 @@ package mk.ukim.finki.wp.schedulero.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import mk.ukim.finki.wp.schedulero.enums.AppointmentStatus;
 
@@ -26,10 +25,6 @@ public class Appointment {
     @ManyToOne
     @JoinColumn(name = "service_id")
     private DetailService service;
-
-    @ManyToOne
-    @JoinColumn(name = "employee_id")
-    private Employee employee;
 
     private LocalDateTime startTime;
 

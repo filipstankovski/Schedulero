@@ -3,15 +3,15 @@ package mk.ukim.finki.wp.schedulero.web;
 import lombok.RequiredArgsConstructor;
 import mk.ukim.finki.wp.schedulero.dto.CreateAppointmentDto;
 import mk.ukim.finki.wp.schedulero.dto.DisplayAppointmentDto;
-import mk.ukim.finki.wp.schedulero.enums.AppointmentStatus;
 import mk.ukim.finki.wp.schedulero.model.Appointment;
 import mk.ukim.finki.wp.schedulero.model.Customer;
 import mk.ukim.finki.wp.schedulero.model.DetailService;
-import mk.ukim.finki.wp.schedulero.model.Employee;
 import mk.ukim.finki.wp.schedulero.repository.CustomerRepository;
 import mk.ukim.finki.wp.schedulero.repository.DetailServiceRepository;
-import mk.ukim.finki.wp.schedulero.repository.EmployeeRepository;
 import mk.ukim.finki.wp.schedulero.service.AppointmentService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,65 +23,58 @@ public class AppointmentController {
 
     private final AppointmentService appointmentService;
     private final CustomerRepository customerRepository;
-    private final EmployeeRepository employeeRepository;
     private final DetailServiceRepository serviceRepository;
 
     @PostMapping
-    public DisplayAppointmentDto create(@RequestBody CreateAppointmentDto dto) {
+    public ResponseEntity<?> create(@RequestBody CreateAppointmentDto dto,
+                                    @AuthenticationPrincipal UserDetails userDetails) {
 
-        Customer customer = customerRepository.findById(dto.customerId)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-
-        Employee employee = employeeRepository.findById(dto.employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        Customer customer = customerRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Customer profile not found for user: "
+                        + userDetails.getUsername()));
 
         DetailService service = serviceRepository.findById(dto.serviceId)
                 .orElseThrow(() -> new RuntimeException("Service not found"));
 
-        Appointment appointment = appointmentService.create(dto, customer, employee, service);
+        Appointment appointment = appointmentService.create(dto, customer, service);
 
-        return DisplayAppointmentDto.from(appointment);
+        return ResponseEntity.ok(DisplayAppointmentDto.from(appointment));
     }
 
-
-
     @PostMapping("/{id}/accept")
-    public DisplayAppointmentDto accept(@PathVariable Long id) {
-        return DisplayAppointmentDto.from(appointmentService.accept(id));
+    public ResponseEntity<DisplayAppointmentDto> accept(@PathVariable Long id) {
+        return ResponseEntity.ok(DisplayAppointmentDto.from(appointmentService.accept(id)));
     }
 
     @PostMapping("/{id}/decline")
-    public DisplayAppointmentDto decline(@PathVariable Long id) {
-        return DisplayAppointmentDto.from(appointmentService.decline(id));
+    public ResponseEntity<DisplayAppointmentDto> decline(@PathVariable Long id) {
+        return ResponseEntity.ok(DisplayAppointmentDto.from(appointmentService.decline(id)));
     }
 
     @PostMapping("/{id}/reschedule")
-    public DisplayAppointmentDto reschedule(@PathVariable Long id,
-                                            @RequestBody CreateAppointmentDto dto) {
-
-        Appointment a = appointmentService.reschedule(id, dto.startTime);
-        return DisplayAppointmentDto.from(a);
+    public ResponseEntity<?> reschedule(@PathVariable Long id,
+                                        @RequestBody CreateAppointmentDto dto) {
+        try {
+            Appointment a = appointmentService.reschedule(id, dto.startTime);
+            return ResponseEntity.ok(DisplayAppointmentDto.from(a));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping
-    public List<DisplayAppointmentDto> findAll(
-            @RequestParam(required = false) Long employeeId) {
+    public ResponseEntity<List<DisplayAppointmentDto>> findAll(
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        List<Appointment> appointments;
+        boolean isBusiness = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_BUSINESS"));
 
-        if (employeeId != null) {
-            appointments = appointmentService.findByEmployeeId(employeeId);
-        } else {
-            appointments = appointmentService.findAll();
-        }
+        List<Appointment> appointments = isBusiness
+                ? appointmentService.findAll()
+                : appointmentService.findByCustomerUsername(userDetails.getUsername());
 
-        return appointments.stream()
+        return ResponseEntity.ok(appointments.stream()
                 .map(DisplayAppointmentDto::from)
-                .toList();
-    }
-
-    @GetMapping("/employees")
-    public List<Employee> getEmployees() {
-        return employeeRepository.findAll();
+                .toList());
     }
 }

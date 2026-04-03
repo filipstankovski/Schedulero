@@ -1,17 +1,15 @@
 package mk.ukim.finki.wp.schedulero.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+import mk.ukim.finki.wp.schedulero.model.AppUser;
+import java.math.BigDecimal;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
+@Builder
 public class DetailService {
 
     @Id
@@ -20,7 +18,13 @@ public class DetailService {
 
     private String name;
 
+    private String description;
+
     private int durationMinutes;
 
-    private double price;
+    private BigDecimal price;
+
+    @ManyToOne
+    @JoinColumn(name = "business_id")
+    private AppUser business;
 }
